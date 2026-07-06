@@ -1,0 +1,11 @@
+pub const CMD_NOT_FOUND: &str = "Command '{}' not found";
+pub const ERR_NO_SUCH_FILE_OR_DIR: &str = "{}: {}: No such file or directory";
+pub const ERR_IS_A_DIRECTORY: &str = "{}: {}: is a directory";
+pub const ERR_NOT_A_DIRECTORY: &str = "{}: {}: Not a directory";
+pub const ERR_FILE_EXISTS: &str = "mkdir: cannot create directory '{}': File exists";
+pub const ERR_CP_OMITTING_DIR: &str = "cp: -r not specified; omitting directory '{}'";
+pub const ERR_CD_HOME_NOT_SET: &str = "cd: HOME not set";
+pub const ERR_CD_TOO_MANY_ARGS: &str = "cd: too many arguments";
+pub const ERR_MISSING_OPERAND: &str = "{}: missing operand";
+pub const ERR_MISSING_DEST_OPERAND: &str = "{}: missing destination file operand after '{}'";
+pub const ERR_GENERIC: &str = "{}: {}: {}";
