@@ -41,7 +41,9 @@ pub fn start_shell() {
                             eprintln!("{}", crate::constants::fallback::CMD_NOT_FOUND.replace("{}", &name));
                         }
                         Err(ShellError::Generic(msg)) => {
-                            eprintln!("{}", msg);
+                            if !msg.is_empty() {
+                                eprintln!("{}", msg);
+                            }
                         }
                     }
                 }
