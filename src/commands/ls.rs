@@ -6,7 +6,7 @@ use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::os::unix::fs::MetadataExt;
 use std::path::Path;
-extern "C" {
+unsafe extern "C" {
     fn ctime(timep: *const i64) -> *mut std::os::raw::c_char;
 }
 #[cfg(target_os = "macos")]

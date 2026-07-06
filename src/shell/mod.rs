@@ -4,7 +4,7 @@ use crate::commands::dispatch_command;
 use crate::types::errors::ShellError;
 use crate::shell::state::ShellState;
 pub mod state;
-extern "C" {
+unsafe extern "C" {
     fn signal(sig: i32, handler: usize) -> usize;
 }
 const SIGINT: i32 = 2;
