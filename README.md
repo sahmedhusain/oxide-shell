@@ -1,86 +1,148 @@
-# 0-shell 🐚
+# 🐚 OxideShell
 
-A minimalist, Unix-like shell implemented from scratch in Rust. 
+[![Rust](https://img.shields.io/badge/Rust-2021-000000?style=flat&logo=rust)](https://www.rust-lang.org/)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE.md)
+[![Platform](https://img.shields.io/badge/Platform-Unix%20%7C%20macOS%20%7C%20Linux-blue)](#-setup--execution)
 
-The coolest part? It doesn't rely on or spawn external system binaries (like `/bin/ls` or `/bin/cp`). Instead, every command is built directly into the shell using Rust's standard library and Unix system APIs.
+A minimalist, high-performance Unix-like command shell implemented entirely from scratch in Rust. 
 
----
-
-## What does it support?
-
-Here are the commands built into the shell:
-
-*   **`exit`**: Exits the shell. You can optionally provide an exit code (e.g., `exit 0` or `exit 1`).
-*   **`pwd`**: Prints your current working directory path.
-*   **`cd`**: Changes the active directory. If you run it without arguments (`cd`), it takes you straight to your `$HOME` directory.
-*   **`echo`**: Prints your arguments back to you, separated by spaces. It handles both single (`'`) and double (`"`) quotes so you can pass spaces within a single argument.
-*   **`mkdir`**: Creates one or more directories.
-*   **`cat`**: Reads and prints file contents. If you run it without parameters, it falls back to streaming standard input.
-*   **`cp`**: Copies files to a target path or directory.
-*   **`mv`**: Moves or renames files and directories.
-*   **`rm`**: Removes files. Add the `-r` flag to delete directories and their contents recursively.
-*   **`ls`**: Lists directory contents alphabetically. It supports:
-    *   `-a`: Includes hidden files (as well as `.` and `..`).
-    *   `-l`: Long listing format showing permissions, link counts, UID/GID owner details, file sizes (or major/minor device numbers), and formatted modification times.
-    *   `-F`: Appends file type indicators (`/` for directories, `*` for executables, `@` for symlinks).
+OxideShell operates completely standalone—it does not rely on or spawn external system binaries (such as `/bin/ls` or `/bin/cp`). Instead, every command execution path is implemented directly via Rust standard library file system drivers and OS syscall abstractions.
 
 ---
 
-## ⚡ Nice Touches (Bonus Features)
+## ⚡ Key Highlights
 
-*   **Ctrl+C Grace**: Pressing `Ctrl+C` won't crash or kill your shell. It is ignored gracefully.
-*   **Pretty Prompt**: Shows your current directory relative to your home folder (e.g., replacing `/Users/username` with `~`).
-*   **Clean Outputs**: Column layouts in `ls -l` are dynamically aligned to keep the layout readable regardless of file sizes or username lengths.
+- **Zero External Binary Dependencies**: All shell commands (`ls`, `cp`, `mv`, `rm`, `cat`, etc.) execute internally within the process memory space.
+- **Robust Argument & Quote Parser**: Implements state-machine parsing for single quotes (`'`), double quotes (`"`), and escape characters.
+- **Pretty Environment Prompt**: Dynamic prompt formatting showing relative path representation (`~` substitution for home directory).
+- **Signal Grace & Protection**: Built-in signal handling catches `Ctrl+C` (`SIGINT`) without terminating the active shell session.
+- **Dynamic Table Alignment**: `ls -l` outputs are formatted using calculated column widths for user, group, byte sizes, and timestamps.
 
 ---
 
-## 📂 Project Architecture
+## 📋 Table of Contents
 
-We structured the project to follow scalable rust patterns:
+- [Key Highlights](#-key-highlights)
+- [Supported Built-in Commands](#-supported-built-in-commands)
+- [System Architecture](#-system-architecture)
+- [Command Execution Flow](#-command-execution-flow)
+- [Setup & Execution](#-setup--execution)
+- [Directory Structure](#-directory-structure)
+- [License](#-license)
 
-```text
-src/
-├── main.rs                 # Initializes and boots the shell
-├── constants/
-│   ├── mod.rs              # Re-exports constants
-│   └── fallback.rs         # Holds all user-facing fallback messages and templates
-├── types/
-│   ├── mod.rs              # Re-exports types
-│   ├── command.rs          # Command representation structures
-│   └── errors.rs           # Shell execution error enums
-├── parser/
-│   └── mod.rs              # Text command parser (interprets quotes & escapes)
-├── shell/
-│   ├── mod.rs              # REPL loop coordinator & prompt builder
-│   └── state.rs            # Struct managing the active shell environment
-└── commands/
-    ├── mod.rs              # Directs inputs to correct modules
-    ├── cd.rs
-    ├── cat.rs
-    ├── cp.rs
-    ├── echo.rs
-    ├── exit.rs
-    ├── ls.rs
-    ├── mkdir.rs
-    ├── mv.rs
-    ├── pwd.rs
-    └── rm.rs
+---
+
+## 🛠️ Supported Built-in Commands
+
+| Command | Supported Flags | Description |
+| :--- | :--- | :--- |
+| `pwd` | None | Prints the current working directory path. |
+| `cd` | `[path]` | Changes directory (defaults to `$HOME` if no path provided). |
+| `echo` | `[args...]` | Prints argument string handling single and double quoted segments. |
+| `ls` | `-a`, `-l`, `-F` | Directory listing with hidden files (`-a`), detailed attributes (`-l`), and file type indicators (`-F`). |
+| `cat` | `[files...]` | Concatenates and prints file contents, or streams `STDIN` when no files specified. |
+| `cp` | `source target` | Copies files to a target destination path or directory. |
+| `mv` | `source target` | Moves or renames files and directories. |
+| `rm` | `-r` | Removes files, or recursively deletes directory trees when `-r` is set. |
+| `mkdir`| `[dirs...]` | Creates one or more directory paths. |
+| `exit` | `[code]` | Exits the shell with an optional status code (defaults to `0`). |
+
+---
+
+## 🏗️ System Architecture
+
+```mermaid
+graph TD
+    A[User Input / Terminal REPL] --> B[Shell Coordinator & Prompt Builder]
+    B --> C[Lexer & Command Parser]
+    C --> D{Parse Valid?}
+    D -- No --> E[Display Syntax Error]
+    D -- Yes --> F[Command Dispatcher Engine]
+    
+    F --> G[Built-in Executors]
+    G --> H1[pwd / cd Module]
+    G --> H2[ls / cat / mkdir Module]
+    G --> H3[cp / mv / rm Module]
+    G --> H4[echo / exit Module]
+    
+    H1 & H2 & H3 & H4 --> I[Rust Standard Library & Syscalls]
+    I --> J[Terminal Standard Output]
 ```
 
 ---
 
-## 🚀 Quick Setup & Run
+## 📐 Command Execution Flow
 
-### 1. Build
-Make sure you have Cargo and the Rust toolchain installed. Build the project using:
+```mermaid
+sequenceDiagram
+    participant User
+    participant Shell as REPL Loop
+    participant Parser as Lexer & Parser
+    participant Cmd as Command Module
+    participant FS as File System API
 
-```bash
-cargo build --release
+    User->>Shell: Enter command line string
+    Shell->>Parser: parse_command_line(input)
+    Parser-->>Shell: Command Struct (Name, Flags, Arguments)
+    Shell->>Cmd: dispatch(command)
+    
+    alt File System Operation (e.g. ls -l)
+        Cmd->>FS: read_dir() & metadata()
+        FS-->>Cmd: File Attributes & Timestamps
+        Cmd->>Shell: Formatted Aligned Output
+    else Navigation (e.g. cd ~/projects)
+        Cmd->>FS: set_current_dir(target)
+        FS-->>Cmd: Success / Error
+    end
+
+    Shell-->>User: Render Pretty Prompt
 ```
 
-### 2. Run
-Start the shell using the compiled binary:
+---
 
-```bash
-./target/release/src
+## 🚀 Setup & Execution
+
+### Prerequisites
+
+- **Rust Toolchain**: Cargo and `rustc` (1.70+) installed. Verify via `rustc --version`.
+
+### Build & Run
+
+1. **Clone Repository**:
+   ```bash
+   git clone https://github.com/sahmedhusain/oxide-shell.git
+   cd oxide-shell
+   ```
+
+2. **Compile in Release Mode**:
+   ```bash
+   cargo build --release
+   ```
+
+3. **Launch the Shell**:
+   ```bash
+   ./target/release/oxide-shell
+   ```
+
+---
+
+## 📂 Directory Structure
+
 ```
+oxide-shell/
+├── Cargo.toml              # Rust project metadata & manifest
+├── README.md               # Project documentation
+└── src/
+    ├── main.rs             # Application bootstrapper
+    ├── constants/          # Fallback templates and prompt styles
+    ├── types/              # Internal command & error data structures
+    ├── parser/             # Lexical parser handling quotes & escapes
+    ├── shell/              # REPL loop state machine & prompt generator
+    └── commands/           # Pure Rust built-in command implementations
+```
+
+---
+
+## 📄 License
+
+Distributed under the MIT License. See [LICENSE](LICENSE.md) for details.
