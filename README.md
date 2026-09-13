@@ -10,6 +10,34 @@ OxideShell operates completely standalone—it does not rely on or spawn externa
 
 ---
 
+## 💻 Terminal Preview
+
+Here is an example of an interactive session running inside **OxideShell**:
+
+```text
+$ ./target/release/oxide-shell
+~/projects ❯ pwd
+/Users/sayed/projects
+
+~/projects ❯ mkdir workspace && cd workspace
+~/projects/workspace ❯ echo "Hello from OxideShell!" > note.txt
+~/projects/workspace ❯ cat note.txt
+Hello from OxideShell!
+
+~/projects/workspace ❯ ls -l -a -F
+drwxr-xr-x  3 sayed  staff    96 Sep 13 03:00 ./
+drwxr-xr-x  4 sayed  staff   128 Sep 13 03:00 ../
+-rw-r--r--  1 sayed  staff    23 Sep 13 03:00 note.txt
+
+~/projects/workspace ❯ cp note.txt backup.txt
+~/projects/workspace ❯ ls -F
+backup.txt  note.txt
+
+~/projects/workspace ❯ exit 0
+```
+
+---
+
 ## ⚡ Key Highlights
 
 - **Zero External Binary Dependencies**: All shell commands (`ls`, `cp`, `mv`, `rm`, `cat`, etc.) execute internally within the process memory space.
@@ -22,6 +50,7 @@ OxideShell operates completely standalone—it does not rely on or spawn externa
 
 ## 📋 Table of Contents
 
+- [Terminal Preview](#-terminal-preview)
 - [Key Highlights](#-key-highlights)
 - [Supported Built-in Commands](#-supported-built-in-commands)
 - [System Architecture](#-system-architecture)
@@ -53,20 +82,23 @@ OxideShell operates completely standalone—it does not rely on or spawn externa
 
 ```mermaid
 graph TD
-    A[User Input / Terminal REPL] --> B[Shell Coordinator & Prompt Builder]
-    B --> C[Lexer & Command Parser]
-    C --> D{Parse Valid?}
-    D -- No --> E[Display Syntax Error]
-    D -- Yes --> F[Command Dispatcher Engine]
+    A["User Input / Terminal REPL"] --> B["Shell Coordinator & Prompt Builder"]
+    B --> C["Lexer & Command Parser"]
+    C --> D{"Parse Valid?"}
+    D -- No --> E["Display Syntax Error"]
+    D -- Yes --> F["Command Dispatcher Engine"]
     
-    F --> G[Built-in Executors]
-    G --> H1[pwd / cd Module]
-    G --> H2[ls / cat / mkdir Module]
-    G --> H3[cp / mv / rm Module]
-    G --> H4[echo / exit Module]
+    F --> G["Built-in Executors"]
+    G --> H1["pwd / cd Module"]
+    G --> H2["ls / cat / mkdir Module"]
+    G --> H3["cp / mv / rm Module"]
+    G --> H4["echo / exit Module"]
     
-    H1 & H2 & H3 & H4 --> I[Rust Standard Library & Syscalls]
-    I --> J[Terminal Standard Output]
+    H1 --> I["Rust Standard Library & Syscalls"]
+    H2 --> I
+    H3 --> I
+    H4 --> I
+    I --> J["Terminal Standard Output"]
 ```
 
 ---
@@ -75,7 +107,7 @@ graph TD
 
 ```mermaid
 sequenceDiagram
-    participant User
+    participant User as User
     participant Shell as REPL Loop
     participant Parser as Lexer & Parser
     participant Cmd as Command Module
@@ -86,11 +118,11 @@ sequenceDiagram
     Parser-->>Shell: Command Struct (Name, Flags, Arguments)
     Shell->>Cmd: dispatch(command)
     
-    alt File System Operation (e.g. ls -l)
+    alt File System Operation
         Cmd->>FS: read_dir() & metadata()
         FS-->>Cmd: File Attributes & Timestamps
         Cmd->>Shell: Formatted Aligned Output
-    else Navigation (e.g. cd ~/projects)
+    else Navigation Operation
         Cmd->>FS: set_current_dir(target)
         FS-->>Cmd: Success / Error
     end
